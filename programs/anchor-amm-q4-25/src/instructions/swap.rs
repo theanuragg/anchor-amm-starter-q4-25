@@ -33,13 +33,15 @@ pub struct Swap<'info> {
     )]
     pub vault_y: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_x,
         associated_token::authority = user,
     )]
     pub user_x: Account<'info, TokenAccount>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = user,
         associated_token::mint = mint_y,
         associated_token::authority = user,
     )]
@@ -75,6 +77,9 @@ impl<'info> Swap<'info> {
         let result = curve
             .swap(pair, amount_in, min_amount_out)
             .map_err(AmmError::from)?;
+
+        require!(result.deposit != 0, AmmError::InvalidAmount);
+        require!(result.withdraw != 0, AmmError::InvalidAmount);
 
         // Deposit tokens from user to vault
         self.deposit_tokens(is_x, amount_in)?;
